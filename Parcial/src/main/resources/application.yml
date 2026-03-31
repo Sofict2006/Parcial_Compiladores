@@ -1,0 +1,33 @@
+#Archivo de configuración
+
+server:
+  #Puerto en el que corre la aplicación
+  port: 3000
+spring:
+  #Extra para que me lea el .env :c
+  config:
+    import: optional:file:.env[.properties]
+
+  application:
+    name: Parcial
+  #Toda la info de la base de datos
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  #Crea solo la base de datos y crea los campos
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    #Si hay algun archivo con datos que lo lea y lo inserte en la bd
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+    sql:
+      init:
+        mode: always
+        continue-on-error: false
