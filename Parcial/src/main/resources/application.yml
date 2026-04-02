@@ -1,7 +1,7 @@
-#Archivo de configuración
+#Archivo de configuraciÃ³n
 
 server:
-  #Puerto en el que corre la aplicación
+  #Puerto en el que corre la aplicaciÃ³n
   port: 3000
 spring:
   #Extra para que me lea el .env :c
