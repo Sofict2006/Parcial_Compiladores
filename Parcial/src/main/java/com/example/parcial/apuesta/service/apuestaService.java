@@ -13,6 +13,12 @@ import com.example.parcial.peleador.repository.peleadorRepository;
 import com.example.parcial.usuario.model.usuario;
 import com.example.parcial.usuario.repository.usuarioRepository;
 import org.springframework.stereotype.Service;
+//Excepciones:
+import com.example.parcial.excepciones.MontoInvalidoException; //alfabetico o numerico no 
+import com.example.parcial.excepciones.PeleaNoEncontradaException;
+import com.example.parcial.excepciones.PeleadorNoEncontradoException;
+import com.example.parcial.excepciones.PeleadorNoPerteneceAPeleaException; //apostar solo por los peleadores de esa pelea
+import com.example.parcial.excepciones.UsuarioNoEncontradoException;
 
 import java.util.List;
 import java.util.Objects;
@@ -35,25 +41,37 @@ public class apuestaService {
     }
 
     public apuestaResponseDTO create(apuestaCreateDTO dto) {
-        apuesta apuesta = apuestaMapper.toApuesta(dto);
 
-        // 2. Buscar peleador, usuario, y pelea en BD
+        if (dto.monto() == null || dto.monto() <= 0) {
+            throw new MontoInvalidoException("El monto de la apuesta debe ser mayor que 0");
+        }
+
         peleador p = peleadorRepository.findById(dto.peleador_id())
-                .orElseThrow(() -> new NotFoundException("Peleador no existe"));
+                .orElseThrow(() -> new PeleadorNoEncontradoException("Peleador no existe"));
 
         usuario u = usuarioRepository.findById(dto.usuario_id())
-                .orElseThrow(() -> new NotFoundException("Usuario no existe"));
+                .orElseThrow(() -> new UsuarioNoEncontradoException("Usuario no existe"));
 
         pelea pelea = peleaRepository.findById(dto.pelea_id())
-                .orElseThrow(() -> new NotFoundException("La pelea no existe"));
+                .orElseThrow(() -> new PeleaNoEncontradaException("La pelea no existe"));
 
-        // 3. Asignar relaciones
+        boolean perteneceAPelea =
+                Objects.equals(pelea.getPeleador1().getId(), p.getId()) ||
+                Objects.equals(pelea.getPeleador2().getId(), p.getId());
+
+        if (!perteneceAPelea) {
+            throw new PeleadorNoPerteneceAPeleaException(
+                    "El peleador apostado no pertenece a esta pelea"
+            );
+        }
+
+        apuesta apuesta = apuestaMapper.toApuesta(dto);
+
         apuesta.setPeleador_id(p);
         apuesta.setUsuario_id(u);
         apuesta.setPelea_id(pelea);
 
-        //Para saber si el usuario gano o no
-        if ( pelea.getGanador().getId().equals( p.getId() ) ) {
+        if (pelea.getGanador().getId().equals(p.getId())) {
             apuesta.setGano(true);
         } else {
             apuesta.setGano(false);
