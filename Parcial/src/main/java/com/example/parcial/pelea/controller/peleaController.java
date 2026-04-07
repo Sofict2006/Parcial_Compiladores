@@ -7,13 +7,17 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/pelea")
+@PreAuthorize("hasAnyRole('ADMIN', 'USER')") // Por defecto todos pueden ver
 public class peleaController {
 
     private final peleaService peleaService;
+
     public peleaController(peleaService peleaService) {
         this.peleaService = peleaService;
     }
@@ -30,5 +34,8 @@ public class peleaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public peleaResponseDTO create(@Valid @RequestBody peleaCreateDTO dto) { return peleaService.create(dto); }
+    @PreAuthorize("hasRole('ADMIN')") // Solo Simón Maligno puede crear esto
+    public peleaResponseDTO create(@Valid @RequestBody peleaCreateDTO dto) {
+        return peleaService.create(dto);
+    }
 }

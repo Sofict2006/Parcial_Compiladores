@@ -9,6 +9,9 @@ import com.example.parcial.pelea.mapper.peleaMapper;
 import com.example.parcial.peleador.model.peleador;
 import com.example.parcial.peleador.repository.peleadorRepository;
 import org.springframework.stereotype.Service;
+//Los de las excepciones que existan y que no esten repetidos (pues no puedo pelear conmigo misma, o si?)
+import com.example.parcial.excepciones.PeleadorNoEncontradoException;
+import com.example.parcial.excepciones.PeleadoresRepetidosException;
 
 import java.util.*;
 
@@ -26,20 +29,24 @@ public class peleaService {
     }
 
     // Creamos la peleita, se buscan los peleadores y se simula el combate
+    //Ahora con las excepciones descritas anteriromente 
     public peleaResponseDTO create(peleaCreateDTO dto) {
+
+        if (dto.peleador1_id().equals(dto.peleador2_id())) {
+            throw new PeleadoresRepetidosException("No se puede crear una pelea con el mismo peleador dos veces");
+        }
+
         pelea pelea = peleaMapper.toPelea(dto);
 
-        // Ahi tan los dos peleadores de la base de datos, si no existen pues error y ya
         peleador p1 = peleadorRepository.findById(dto.peleador1_id())
-                .orElseThrow(() -> new NotFoundException("Peleador 1 no encontrado"));
+                .orElseThrow(() -> new PeleadorNoEncontradoException("Peleador 1 no encontrado"));
 
         peleador p2 = peleadorRepository.findById(dto.peleador2_id())
-                .orElseThrow(() -> new NotFoundException("Peleador 2 no encontrado"));
+                .orElseThrow(() -> new PeleadorNoEncontradoException("Peleador 2 no encontrado"));
 
         pelea.setPeleador1(p1);
         pelea.setPeleador2(p2);
 
-        // Usamos las cositas que faltaban fuerza, velocidad, resistencia, vida y cositas de pokemon
         Random random = new Random();
 
         int vida1 = p1.getVida();
@@ -47,31 +54,23 @@ public class peleaService {
         boolean segundaOportunidadUsada1 = false;
         boolean segundaOportunidadUsada2 = false;
 
-        // Historia de la peleita con las voz de Mario Kempes
         StringBuilder sb = new StringBuilder();
         int ronda = 1;
 
-        // Mientras los dos sigan vivos se siguen dando puño
-        // El mas rapido ataca primero y tambien puede esquivar mas facil
         while (vida1 > 0 && vida2 > 0) {
 
-            // El mas rapido pues ataca mas rapido tiene ventaja pero pues como me dijeron
-            // que azar pues ahi puede que no, como si fuera la garra rapida del pokemon si sabe o no sabe ja
             int iniciativa1 = p1.getVelocidad() + random.nextInt(20);
             int iniciativa2 = p2.getVelocidad() + random.nextInt(20);
             peleador atacante, defensor;
-            int vidaAtacante, vidaDefensor;
+            int vidaDefensor;
             boolean esP1Primero = iniciativa1 >= iniciativa2;
 
             atacante = esP1Primero ? p1 : p2;
             defensor = esP1Primero ? p2 : p1;
-            vidaAtacante = esP1Primero ? vida1 : vida2;
             vidaDefensor = esP1Primero ? vida2 : vida1;
 
             vidaDefensor = resolverAtaque(atacante, defensor, vidaDefensor, random, sb, ronda);
 
-            // Si un peleador cae a 0 de vida tiene un 15% de chance
-            // de levantarse con el poder de la amista
             boolean usada = esP1Primero ? segundaOportunidadUsada2 : segundaOportunidadUsada1;
             if (vidaDefensor <= 0 && !usada && random.nextDouble() < 0.15) {
                 int vidaRecuperada = (int) (defensor.getVida() * 0.2);
@@ -87,7 +86,6 @@ public class peleaService {
                     segundaOportunidadUsada1 = true;
             }
 
-            // Actualizo las vidas con el resultado del turno
             if (esP1Primero) {
                 vida2 = vidaDefensor;
             } else {
@@ -103,7 +101,6 @@ public class peleaService {
 
             vidaDefensor = resolverAtaque(atacante, defensor, vidaDefensor, random, sb, ronda);
 
-            // Lo mismo de la segunda oportunidad pero para el otro peleador
             usada = esP1Primero ? segundaOportunidadUsada1 : segundaOportunidadUsada2;
             if (vidaDefensor <= 0 && !usada && random.nextDouble() < 0.15) {
                 int vidaRecuperada = (int) (defensor.getVida() * 0.2);
@@ -127,20 +124,17 @@ public class peleaService {
 
             ronda++;
             if (ronda > 100)
-                break; // Por si acaso, que no se quede pegado isis no me mates
+                break;
         }
 
-        // Ya melos, pillamos quien melo y qiuien melon't
         peleador ganador;
         if (vida1 > vida2)
             ganador = p1;
         else if (vida2 > vida1)
             ganador = p2;
         else
-            ganador = random.nextBoolean() ? p1 : p2; // Si quedan igual, pues al de tin marin si sabe
+            ganador = random.nextBoolean() ? p1 : p2;
 
-        // Le pongo el nombre del ganador al final de la narracion y guardo todo en la
-        // BD
         sb.append("🏆 Ganador: ").append(ganador.getNombre()).append("!");
         pelea.setGanador(ganador);
         pelea.setComentarios(sb.toString());

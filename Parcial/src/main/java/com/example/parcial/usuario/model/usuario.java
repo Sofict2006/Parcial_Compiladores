@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Objects;
 
 @Entity
-@Table(name="usuario")
+@Table(
+        name = "usuario",
+        uniqueConstraints = @UniqueConstraint(columnNames = "correo")
+)
 //Crea getters, setters y constructor
 @Data
 public class usuario {
@@ -25,7 +28,7 @@ public class usuario {
     @Column(nullable = false, length = 200)
     private String biografia;
 
-    @Column(nullable = false, length = 200)
+    @Column(nullable = false, length = 200, unique = true) //Debe ser unico para cada usuario 
     private String correo;
 
     @Column(nullable = false, length = 50)

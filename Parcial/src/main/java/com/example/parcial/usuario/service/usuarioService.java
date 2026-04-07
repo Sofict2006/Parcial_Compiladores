@@ -1,5 +1,6 @@
 package com.example.parcial.usuario.service;
 
+import com.example.parcial.excepciones.CorreoDuplicadoException;
 import com.example.parcial.excepciones.NotFoundException;
 import com.example.parcial.usuario.dto.usuarioCreateDTO;
 import com.example.parcial.usuario.dto.usuarioResponseDTO;
@@ -10,17 +11,25 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-//Recibe info del controlador y va al repositorio
 @Service
 public class usuarioService {
 
     private final usuarioRepository usuarioRepository;
+
     public usuarioService(usuarioRepository usuarioRepository1) {
         this.usuarioRepository = usuarioRepository1;
     }
 
     public usuarioResponseDTO create(usuarioCreateDTO dto) {
+        String correoNormalizado = dto.correo().trim().toLowerCase();
+
+        if (usuarioRepository.existsByCorreoIgnoreCase(correoNormalizado)) {
+            throw new CorreoDuplicadoException("Ya existe un usuario con ese correo");
+        }
+
         usuario usuario = usuarioMapper.toUsuario(dto);
+        usuario.setCorreo(correoNormalizado);
+
         usuario saved = usuarioRepository.save(usuario);
         return usuarioMapper.toUsuarioResponseDTO(saved);
     }
@@ -31,11 +40,9 @@ public class usuarioService {
                 .toList();
     }
 
-    public usuarioResponseDTO findById(Long id){
+    public usuarioResponseDTO findById(Long id) {
         usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow( ()->new NotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         return usuarioMapper.toUsuarioResponseDTO(usuario);
     }
-
-
 }

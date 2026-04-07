@@ -7,13 +7,17 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/apuesta")
+@PreAuthorize("hasAnyRole('ADMIN', 'USER')")
 public class apuestaController {
 
     private final apuestaService apuestaService;
+
     public apuestaController(apuestaService apuestaService) {
         this.apuestaService = apuestaService;
     }
@@ -30,5 +34,7 @@ public class apuestaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public apuestaResponseDTO create(@Valid @RequestBody apuestaCreateDTO dto) { return apuestaService.create(dto); }
+    public apuestaResponseDTO create(@Valid @RequestBody apuestaCreateDTO dto) {
+        return apuestaService.create(dto);
+    }
 }

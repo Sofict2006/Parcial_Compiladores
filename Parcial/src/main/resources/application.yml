@@ -8,6 +8,14 @@ spring:
   config:
     import: optional:file:.env[.properties]
 
+  #Seguridad con Keycloak
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI}
+
   application:
     name: Parcial
   #Toda la info de la base de datos
